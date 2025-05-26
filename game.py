@@ -98,6 +98,8 @@ class Player(GameSprite):
         else:
             # Після повного обертання — заморожуємо
             window.blit(transform.rotate(self.image, 90), self.rect.topleft)
+            global finish
+            finish = True
 
     def reset(self):
         if not self.is_dead:
@@ -124,10 +126,13 @@ class MagicSpell(sprite.Sprite):
         if abs(self.rect.x - self.start_x) > self.dist or self.rect.right < 0 or self.rect.left > win_width:
             self.kill()
 
-
-harry = Player(img_hero, 100, 450, 100, 200, 10, K_a, K_d, K_SPACE, K_LSHIFT, (0, 247, 255), (107, 255, 206), 100, 5)  # TODO: додати кольори магії
-lord = Player(img_enemy, win_width-200, 450, 100, 200, 10, K_LEFT, K_RIGHT, K_RCTRL, K_RSHIFT, (255, 26, 72), (110, 67, 252), 100, 10)  # TODO: додати кольори магії
-spell_group = sprite.Group()
+def start():
+    global harry,lord,spell_group,finish
+    harry = Player(img_hero, 100, 450, 100, 200, 10, K_a, K_d, K_SPACE, K_LSHIFT, (0, 247, 255), (107, 255, 206), 100, 5)  # TODO: додати кольори магії
+    lord = Player(img_enemy, win_width-200, 450, 100, 200, 10, K_LEFT, K_RIGHT, K_RCTRL, K_RSHIFT, (255, 26, 72), (110, 67, 252), 100, 10)  # TODO: додати кольори магії
+    spell_group = sprite.Group()
+    finish = False
+start()
 
 while run:
     events = event.get()
@@ -143,33 +148,43 @@ while run:
                 lord.melee_attack(harry)
             if e.key == lord.ranged_attack_key:
                 lord.ranged_attack(harry)
-    keys = key.get_pressed()
-    window.blit(background1, (0, 0))
-    harry.update(keys)
-    harry.reset()
-    lord.update(keys)
-    lord.reset()
+            if e.key == K_r:
+                start()
+    if not finish:
+        keys = key.get_pressed()
+        window.blit(background1, (0, 0))
+        harry.update(keys)
+        harry.reset()
+        lord.update(keys)
+        lord.reset()
 
-    spell_group.update()
-    spell_group.draw(window)
+        spell_group.update()
+        spell_group.draw(window)
 
-    for spell in spell_group:
-        if spell.rect.colliderect(harry.rect):  # TODO: прибрати напрямок
-            harry.hp -= spell.power
-            spell.kill()
-        elif spell.rect.colliderect(lord.rect):  # TODO: прибрати напрямок
-            lord.hp -= spell.power
-            spell.kill()
+        for spell in spell_group:
+            if spell.rect.colliderect(harry.rect):  # TODO: прибрати напрямок
+                harry.hp -= spell.power
+                spell.kill()
+            elif spell.rect.colliderect(lord.rect):  # TODO: прибрати напрямок
+                lord.hp -= spell.power
+                spell.kill()
 
-    text_health1 = font_health.render(f"Здоров'я:{harry.hp}", 1, (255, 255, 255))
-    window.blit(text_health1, (0, 0))
-    text_health2 = font_health.render(f"Здоров'я:{lord.hp}", 1, (255, 255, 255))
-    window.blit(text_health2, (win_width - 250, 0))
+        text_health1 = font_health.render(f"Здоров'я:{harry.hp}", 1, (255, 255, 255))
+        window.blit(text_health1, (0, 0))
+        text_health2 = font_health.render(f"Здоров'я:{lord.hp}", 1, (255, 255, 255))
+        window.blit(text_health2, (win_width - 250, 0))
 
-    if harry.hp <= 0:
-        harry.is_dead = True
-    if lord.hp <= 0:
-        lord.is_dead = True
+        if harry.hp <= 0:
+            harry.is_dead = True
+
+            final_text = font_health.render("Гаррі Поттер помер😫",True,(255,0,0))
+            window.blit(final_text,((win_width - final_text.get_rect().width) // 2, win_height // 2 - 50))
+        if lord.hp <= 0:
+            lord.is_dead = True
+
+            final_text = font_health.render("Цей час настав!", True, (255, 0, 0))
+            window.blit(final_text, ((win_width - final_text.get_rect().width) // 2, win_height // 2 - 50))
+
 
     display.update()
     time.delay(50)
