@@ -19,7 +19,7 @@ JUMP_POWER = -16
 
 # Налаштування вікна
 screen = display.set_mode((WIN_WIDTH, WIN_HEIGHT))
-display.set_caption("Mortal Kombat Arena")
+display.set_caption("Нogwarts Kombat ")
 clock = time.Clock()
 
 # Шрифти
@@ -449,29 +449,37 @@ class GameState:
         return True
 
     def update_game(self, keys):
-        if not self.harry.is_dead and not self.lord.is_dead:
+        # Оновлюємо персонажів тільки якщо вони живі
+        if not self.harry.is_dead:
             self.harry.update(keys, self.platform)
+        if not self.lord.is_dead:
             self.lord.update(keys, self.platform)
 
-            # Оновлення заклинань
-            self.spell_group.update()
+        # Оновлення заклинань (вони можуть летіти навіть після смерті)
+        self.spell_group.update()
 
-            # Перевірка колізій заклинань
-            for spell in self.spell_group:
-                if spell.rect.colliderect(self.harry.get_rect()) and spell.character_type != 'harry':
-                    self.harry.take_damage(spell.power)
-                    spell.kill()
-                elif spell.rect.colliderect(self.lord.get_rect()) and spell.character_type != 'lord':
-                    self.lord.take_damage(spell.power)
-                    spell.kill()
+        # Перевірка колізій заклинань тільки для живих персонажів
+        for spell in self.spell_group:
+            if not self.harry.is_dead and spell.rect.colliderect(
+                    self.harry.get_rect()) and spell.character_type != 'harry':
+                self.harry.take_damage(spell.power)
+                spell.kill()
+            elif not self.lord.is_dead and spell.rect.colliderect(
+                    self.lord.get_rect()) and spell.character_type != 'lord':
+                self.lord.take_damage(spell.power)
+                spell.kill()
 
-            # Перевірка переможця
-            if self.harry.is_dead:
+        # Перевірка переможця (ВИНЕСЕНО З УМОВИ!)
+        if self.winner is None:  # Щоб не перезаписувати переможця
+            if self.harry.is_dead and not self.lord.is_dead:
                 self.winner = "Темний Лорд переміг!"
                 skin_data.coins += 20
-            elif self.lord.is_dead:
+            elif self.lord.is_dead and not self.harry.is_dead:
                 self.winner = "Гаррі Поттер переміг!"
                 skin_data.coins += 20
+            elif self.harry.is_dead and self.lord.is_dead:
+                self.winner = "НІЧИЯ!"
+                skin_data.coins += 10
 
     def draw_menu(self):
         screen.blit(menu_bg, (0, 0))
